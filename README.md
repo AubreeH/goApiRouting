@@ -1,3 +1,3 @@
 # goApiRouting Module
 
-See [goApi](github.com/AubreeH/goApi) for details
+See [goApi](https://github.com/AubreeH/goApi) for details
