@@ -2,4 +2,34 @@ package routing
 
 import "github.com/gin-gonic/gin"
 
-func (_ BaseApi) NoMiddleware(_ *gin.Context) bool { return true }
+type Middleware = func(c *gin.Context) bool
+
+type ApiOptions struct {
+	Middleware []Middleware
+}
+
+type BaseApi struct {
+	route   string
+	engine  *gin.Engine
+	options ApiOptions
+}
+
+func (_ *BaseApi) NoMiddleware(_ *gin.Context) []Middleware { return []Middleware{} }
+
+func (api *BaseApi) runMiddleware(c *gin.Context) bool {
+	if api.options.Middleware != nil {
+		for _, m := range api.options.Middleware {
+			if !m(c) {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+func (options *ApiOptions) mergeOptions(newOptions ApiOptions) ApiOptions {
+	options.Middleware = append(options.Middleware, newOptions.Middleware...)
+
+	return *options
+}
