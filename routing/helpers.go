@@ -14,7 +14,7 @@ type BaseApi struct {
 	options ApiOptions
 }
 
-func (_ *BaseApi) NoMiddleware(_ *gin.Context) []Middleware { return []Middleware{} }
+func (_ *BaseApi) NoMiddleware(_ *gin.Context) ApiOptions { return ApiOptions{} }
 
 func (api *BaseApi) runMiddleware(c *gin.Context) bool {
 	if api.options.Middleware != nil {
@@ -32,4 +32,10 @@ func (options *ApiOptions) mergeOptions(newOptions ApiOptions) ApiOptions {
 	options.Middleware = append(options.Middleware, newOptions.Middleware...)
 
 	return *options
+}
+
+func WithMiddleware(middleware ...Middleware) ApiOptions {
+	return ApiOptions{
+		Middleware: middleware,
+	}
 }
