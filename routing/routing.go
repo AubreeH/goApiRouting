@@ -1,15 +1,77 @@
 package routing
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"net"
 	"net/http"
 )
+
+var (
+	defaultConfig = Config{
+		Port:              80,
+		DefaultStatusCode: 500,
+	}
+)
+
+type Response struct {
+	// The status code for the response. Defaults to "500 Internal Server Error" unless specified in Setup Config
+	Status int
+	// The response body.
+	Body any
+	// See JSONResponse, HTMLResponse, XMLResponse
+	Type int
+}
+
+// Config provides the required config options to the Setup function.
+type Config struct {
+	// The port to listen on. If not provided, will default to :80
+	Port int
+	// Override for Response.Status
+	DefaultStatusCode int
+}
+
+func Setup(conf ...Config) (*Router, error) {
+	config := parseConfig(conf)
+
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", config.Port))
+	if err != nil {
+		return nil, err
+	}
+
+	router := &Router{
+		routes:   make(path),
+		listener: ln,
+		config:   config,
+	}
+
+	return router, nil
+}
+
+func parseConfig(conf []Config) Config {
+	config := defaultConfig
+
+	providedConfig := Config{}
+	if len(conf) > 0 {
+		providedConfig = conf[0]
+	}
+
+	if providedConfig.Port != 0 {
+		config.Port = 0
+	}
+
+	if providedConfig.DefaultStatusCode != 0 {
+		config.DefaultStatusCode = providedConfig.DefaultStatusCode
+	}
+
+	return config
+}
 
 // InitialiseRoutes initialises all routes defined within the provided functions.
 // Requires a *gin.Engine to be passed. Refer to gin documentation for basic setup.
 func InitialiseRoutes(e *gin.Engine, apiFuncs ...func(api BaseApi)) {
 	api := BaseApi{
-		engine:  e,
+		router:  e,
 		route:   "",
 		options: ApiOptions{},
 	}
@@ -27,7 +89,8 @@ func (api *BaseApi) Handle(method string, route string, handler func(c *gin.Cont
 			handler(c)
 		}
 	}
-	api.engine.Handle(method, path, handlerWithMiddleware)
+	http.Handle()
+	api.router.Handle(method, path, handlerWithMiddleware)
 }
 
 // Get is a shorthand functions for Handle. It has the same functionality as if the user ran `api.Handle(http.MethodGet, ...)`.
@@ -59,13 +122,13 @@ func (api *BaseApi) Delete(route string, handler func(c *gin.Context)) {
 func (api *BaseApi) Group(route string, options ApiOptions, group func(api BaseApi)) {
 	if route != "" {
 		group(BaseApi{
-			engine:  api.engine,
+			router:  api.router,
 			route:   api.route + "/" + route,
 			options: options.mergeOptions(api.options),
 		})
 	} else {
 		group(BaseApi{
-			engine:  api.engine,
+			router:  api.router,
 			route:   api.route,
 			options: api.options.mergeOptions(options),
 		})
