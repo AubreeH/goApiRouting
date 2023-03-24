@@ -1,12 +1,21 @@
 package routing
 
-import "github.com/gin-gonic/gin"
-
 // runMiddleware runs all middlewares defined within the ApiOptions instance within the targeted BaseApi.
-func (api *BaseApi) runMiddleware(c *gin.Context) bool {
+func (api *BaseApi) runMiddleware(c *Context, respond func(Response)) bool {
 	if api.options.Middleware != nil {
+		cont := true
 		for _, m := range api.options.Middleware {
-			if !m(c) {
+			cont = false
+
+			next := func() {
+				cont = true
+			}
+
+			if !m(c, next, respond) {
+				return false
+			}
+
+			if !cont {
 				return false
 			}
 		}

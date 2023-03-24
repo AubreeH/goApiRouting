@@ -1,16 +1,15 @@
 package routing
 
 import (
-	"github.com/gin-gonic/gin"
 	"net"
 	"net/http"
 )
 
 // Middleware is a function that runs prior to the main function defined for an endpoint.
-// Use the provided *gin.Context to run all required checks.
+// Use the provided *Context to run all required checks.
 // Return true to run the next function.
 // If false is returned, response must be set within the middleware.
-type Middleware = func(c *gin.Context) bool
+type Middleware = func(c *Context, next func(), respond func(Response)) bool
 
 // ApiOptions defines options to use for a certain endpoint group.
 type ApiOptions struct {
@@ -25,17 +24,22 @@ type BaseApi struct {
 }
 
 // NoMiddleware returns an empty ApiOptions struct.
-func (_ *BaseApi) NoMiddleware(_ *gin.Context) ApiOptions { return ApiOptions{} }
+func (_ *BaseApi) NoMiddleware() ApiOptions {
+	return ApiOptions{}
+}
 
 type Router struct {
-	routes   path
+	routes   pathMap
 	listener net.Listener
 	config   Config
 }
 
-type path = map[string]func(r *http.Request) (Response, error)
-
 type Context struct {
 	request *http.Request
-	store   map[string]any
+	writer  http.ResponseWriter
+	store   map[string]interface{}
 }
+
+type pathMap = map[string]endpointMap
+type endpointMap = map[string]endpointFunc
+type endpointFunc = func(*Context, func(Response))

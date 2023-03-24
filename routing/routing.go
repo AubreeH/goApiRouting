@@ -1,8 +1,11 @@
 package routing
 
 import (
+	"encoding/json"
+	"encoding/xml"
+	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
+	"log"
 	"net"
 	"net/http"
 )
@@ -18,7 +21,7 @@ type Response struct {
 	// The status code for the response. Defaults to "500 Internal Server Error" unless specified in Setup Config
 	Status int
 	// The response body.
-	Body any
+	Body interface{}
 	// See JSONResponse, HTMLResponse, XMLResponse
 	Type int
 }
@@ -40,7 +43,7 @@ func Setup(conf ...Config) (*Router, error) {
 	}
 
 	router := &Router{
-		routes:   make(path),
+		routes:   make(pathMap),
 		listener: ln,
 		config:   config,
 	}
@@ -69,9 +72,9 @@ func parseConfig(conf []Config) Config {
 
 // InitialiseRoutes initialises all routes defined within the provided functions.
 // Requires a *gin.Engine to be passed. Refer to gin documentation for basic setup.
-func InitialiseRoutes(e *gin.Engine, apiFuncs ...func(api BaseApi)) {
+func (r *Router) InitialiseRoutes(apiFuncs ...func(api BaseApi)) {
 	api := BaseApi{
-		router:  e,
+		router:  r,
 		route:   "",
 		options: ApiOptions{},
 	}
@@ -79,41 +82,92 @@ func InitialiseRoutes(e *gin.Engine, apiFuncs ...func(api BaseApi)) {
 	for i := range apiFuncs {
 		apiFuncs[i](api)
 	}
+
+	for path, endpoints := range r.routes {
+		r.Handle(path, endpoints)
+	}
+}
+
+func writeResponse(writer http.ResponseWriter, response Response) {
+	var body []byte
+	var err error
+	switch response.Type {
+	case JSONResponse:
+		body, err = json.Marshal(response.Body)
+	case HTMLResponse:
+		body, err = func() (body []byte, err error) {
+			defer func() {
+				if e := recover(); e != nil {
+					body = []byte{}
+					err = errors.New("an error occurred whilst converting body to []byte")
+				}
+			}()
+			return []byte(response.Body.(string)), nil
+		}()
+	case XMLResponse:
+		body, err = xml.Marshal(response.Body)
+	}
+	if err != nil {
+		writer.WriteHeader(500)
+		log.Fatal(err)
+	}
+	writer.WriteHeader(response.Status)
+	_, err = writer.Write(body)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (r *Router) Handle(path string, endpoints endpointMap) {
+	http.HandleFunc(path, func(writer http.ResponseWriter, request *http.Request) {
+		write := func(response Response) {
+			writeResponse(writer, response)
+		}
+
+		handler, ok := endpoints[request.Method]
+		if ok {
+			context := Context{
+				writer:  writer,
+				request: request,
+				store:   make(map[string]interface{}),
+			}
+			handler(&context, write)
+		}
+	})
 }
 
 // Handle adds a new api endpoint with the provided method, route, and handler.
-func (api *BaseApi) Handle(method string, route string, handler func(c *gin.Context)) {
+func (api *BaseApi) Handle(method string, route string, handler func(r *Context) Response) {
 	path := api.route + "/" + route
-	var handlerWithMiddleware = func(c *gin.Context) {
-		if api.runMiddleware(c) {
-			handler(c)
+	var handlerWithMiddleware = func(c *Context, respond func(Response)) {
+		if api.runMiddleware(c, respond) {
+
 		}
 	}
-	http.Handle()
-	api.router.Handle(method, path, handlerWithMiddleware)
+	api.router.routes[path][method] = handlerWithMiddleware
 }
 
 // Get is a shorthand functions for Handle. It has the same functionality as if the user ran `api.Handle(http.MethodGet, ...)`.
 // Get adds a new GET endpoint with the provided route and handler.
-func (api *BaseApi) Get(route string, handler func(c *gin.Context)) {
+func (api *BaseApi) Get(route string, handler func(c *Context) Response) {
 	api.Handle(http.MethodGet, route, handler)
 }
 
 // Post is a shorthand functions for Handle. It has the same functionality as if the user ran `api.Handle(http.MethodPost, ...)`.
 // Post adds a new GET endpoint with the provided route and handler.
-func (api *BaseApi) Post(route string, handler func(c *gin.Context)) {
+func (api *BaseApi) Post(route string, handler func(c *Context) Response) {
 	api.Handle(http.MethodPost, route, handler)
 }
 
 // Patch is a shorthand functions for Handle. It has the same functionality as if the user ran `api.Handle(http.MethodPatch, ...)`.
 // Patch adds a new GET endpoint with the provided route and handler.
-func (api *BaseApi) Patch(route string, handler func(c *gin.Context)) {
+func (api *BaseApi) Patch(route string, handler func(c *Context) Response) {
 	api.Handle(http.MethodPatch, route, handler)
 }
 
 // Delete is a shorthand functions for Handle. It has the same functionality as if the user ran `api.Handle(http.MethodDelete, ...)`.
 // Delete adds a new GET endpoint with the provided route and handler.
-func (api *BaseApi) Delete(route string, handler func(c *gin.Context)) {
+func (api *BaseApi) Delete(route string, handler func(c *Context) Response) {
 	api.Handle(http.MethodDelete, route, handler)
 }
 
