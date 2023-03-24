@@ -60,7 +60,7 @@ func parseConfig(conf []Config) Config {
 	}
 
 	if providedConfig.Port != 0 {
-		config.Port = 0
+		config.Port = providedConfig.Port
 	}
 
 	if providedConfig.DefaultStatusCode != 0 {
