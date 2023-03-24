@@ -88,6 +88,10 @@ func (r *Router) InitialiseRoutes(apiFuncs ...func(api BaseApi)) {
 	}
 }
 
+func (r *Router) Start() error {
+	return http.ListenAndServe(fmt.Sprintf(":%v", r.config.Port), nil)
+}
+
 func writeResponse(writer http.ResponseWriter, response Response) {
 	var body []byte
 	var err error
@@ -137,11 +141,11 @@ func (r *Router) Handle(path string, endpoints endpointMap) {
 }
 
 // Handle adds a new api endpoint with the provided method, route, and handler.
-func (api *BaseApi) Handle(method string, route string, handler func(r *Context) Response) {
+func (api *BaseApi) Handle(method string, route string, handler func(*Context) Response) {
 	path := api.route + "/" + route
 	var handlerWithMiddleware = func(c *Context, respond func(Response)) {
 		if api.runMiddleware(c, respond) {
-
+			handler(c)
 		}
 	}
 	api.router.routes[path][method] = handlerWithMiddleware
