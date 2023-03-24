@@ -138,7 +138,7 @@ func (api *BaseApi) Handle(method string, route string, handler func(*Context) R
 	path := api.route + "/" + route
 	var handlerWithMiddleware = func(c *Context, respond func(Response)) {
 		if api.runMiddleware(c, respond) {
-			handler(c)
+			respond(handler(c))
 		}
 	}
 	if _, ok := api.router.routes[path]; ok {
