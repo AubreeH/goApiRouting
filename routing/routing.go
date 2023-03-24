@@ -128,8 +128,8 @@ func (r *Router) Handle(path string, endpoints endpointMap) {
 		if ok {
 			context := Context{
 				writer:  writer,
-				request: request,
-				store:   make(map[string]interface{}),
+				Request: request,
+				Store:   make(map[string]interface{}),
 			}
 			handler(&context, write)
 		}

@@ -35,9 +35,9 @@ type Router struct {
 }
 
 type Context struct {
-	request *http.Request
+	Request *http.Request
 	writer  http.ResponseWriter
-	store   map[string]interface{}
+	Store   map[string]interface{}
 }
 
 type pathMap = map[string]endpointMap
