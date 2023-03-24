@@ -148,7 +148,13 @@ func (api *BaseApi) Handle(method string, route string, handler func(*Context) R
 			handler(c)
 		}
 	}
-	api.router.routes[path][method] = handlerWithMiddleware
+	if _, ok := api.router.routes[path]; ok {
+		api.router.routes[path][method] = handlerWithMiddleware
+	} else {
+		api.router.routes[path] = make(endpointMap)
+		api.router.routes[path][method] = handlerWithMiddleware
+	}
+
 }
 
 // Get is a shorthand functions for Handle. It has the same functionality as if the user ran `api.Handle(http.MethodGet, ...)`.
