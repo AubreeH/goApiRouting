@@ -91,6 +91,8 @@ func writeResponse(writer http.ResponseWriter, response Response) {
 	switch response.Type {
 	case JSONResponse:
 		body, err = json.Marshal(response.Body)
+		writer.Header().Add("Content-Type", "application/json")
+		break
 	case HTMLResponse:
 		body, err = func() (body []byte, err error) {
 			defer func() {
@@ -101,8 +103,12 @@ func writeResponse(writer http.ResponseWriter, response Response) {
 			}()
 			return []byte(response.Body.(string)), nil
 		}()
+		writer.Header().Add("Content-Type", "text/html")
+		break
 	case XMLResponse:
 		body, err = xml.Marshal(response.Body)
+		writer.Header().Add("Content-Type", "application/xml")
+		break
 	}
 	if err != nil {
 		writer.WriteHeader(500)
