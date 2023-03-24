@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 )
 
@@ -34,21 +33,15 @@ type Config struct {
 	DefaultStatusCode int
 }
 
-func Setup(conf ...Config) (*Router, error) {
+func Setup(conf ...Config) *Router {
 	config := parseConfig(conf)
 
-	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", config.Port))
-	if err != nil {
-		return nil, err
-	}
-
 	router := &Router{
-		routes:   make(pathMap),
-		listener: ln,
-		config:   config,
+		routes: make(pathMap),
+		config: config,
 	}
 
-	return router, nil
+	return router
 }
 
 func parseConfig(conf []Config) Config {

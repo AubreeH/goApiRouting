@@ -1,7 +1,6 @@
 package routing
 
 import (
-	"net"
 	"net/http"
 )
 
@@ -29,9 +28,8 @@ func (_ *BaseApi) NoMiddleware() ApiOptions {
 }
 
 type Router struct {
-	routes   pathMap
-	listener net.Listener
-	config   Config
+	routes pathMap
+	config Config
 }
 
 type Context struct {
