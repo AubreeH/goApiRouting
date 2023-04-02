@@ -5,7 +5,6 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -22,7 +21,7 @@ type Response struct {
 	// The response body.
 	Body interface{}
 	// See JSONResponse, HTMLResponse, XMLResponse
-	Type int
+	Type ResponseType
 }
 
 // Config provides the required config options to the Setup function.
@@ -109,15 +108,27 @@ func writeResponse(writer http.ResponseWriter, response Response) {
 		body, err = xml.Marshal(response.Body)
 		writer.Header().Add("Content-Type", "application/xml")
 		break
+	case PlainTextResponse:
+		body, err = func() (body []byte, err error) {
+			defer func() {
+				if e := recover(); e != nil {
+					body = []byte{}
+					err = errors.New("an error occurred whilst converting body to []byte")
+				}
+			}()
+			return []byte(response.Body.(string)), nil
+		}()
+		writer.Header().Add("Content-Type", "text/plain")
+		break
 	}
 	if err != nil {
 		writer.WriteHeader(500)
-		log.Fatal(err)
+		panic(err)
 	}
 	writer.WriteHeader(response.Status)
 	_, err = writer.Write(body)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 }
 
@@ -135,6 +146,11 @@ func (r *Router) Handle(path string, endpoints endpointMap) {
 				Store:   make(map[string]interface{}),
 			}
 			handler(&context, write)
+		} else {
+			writeResponse(writer, Response{
+				Body: "Method not supported.",
+				Type: PlainTextResponse,
+			})
 		}
 	})
 }

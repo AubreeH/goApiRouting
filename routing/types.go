@@ -8,7 +8,7 @@ import (
 // Use the provided *Context to run all required checks.
 // Return true to run the next function.
 // If false is returned, response must be set within the middleware.
-type Middleware = func(c *Context, next func(), respond func(Response)) bool
+type Middleware = func(c *Context, respond func(Response)) bool
 
 // ApiOptions defines options to use for a certain endpoint group.
 type ApiOptions struct {
