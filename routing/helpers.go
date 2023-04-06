@@ -9,7 +9,7 @@ import (
 
 var (
 	groupSplitRegex      = regexp.MustCompile(`/+([^/]+)`)
-	groupConditionsRegex = regexp.MustCompile(`\${(?P<name>[A-Za-z]*?)(?:="(?P<condition>.*?)")?}`)
+	groupConditionsRegex = regexp.MustCompile(`\${(?P<name>[^=]*?)(?:="(?P<condition>.*?)")?}`)
 )
 
 // runMiddleware runs all middlewares defined within the ApiOptions instance within the targeted BaseApi.
