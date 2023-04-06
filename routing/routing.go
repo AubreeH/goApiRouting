@@ -20,7 +20,7 @@ type Response struct {
 	Status int
 	// The response body.
 	Body interface{}
-	// See JSONResponse, HTMLResponse, XMLResponse
+	// See JSONResponse, HTMLResponse, XMLResponse, FileResponse
 	Type ResponseType
 }
 
@@ -75,16 +75,19 @@ func (r *Router) InitialiseRoutes(apiFuncs ...func(api BaseApi)) {
 		apiFuncs[i](api)
 	}
 
-	for path, endpoints := range r.routes {
-		r.Handle(path, endpoints)
+	err := r.setupEndpointGroups()
+	if err != nil {
+		panic(err)
 	}
+
+	r.Handle()
 }
 
 func (r *Router) Start() error {
 	return http.ListenAndServe(fmt.Sprintf(":%v", r.config.Port), nil)
 }
 
-func writeResponse(writer http.ResponseWriter, response Response) {
+func writeResponse(writer http.ResponseWriter, request *http.Request, response Response) {
 	var body []byte
 	var err error
 	switch response.Type {
@@ -120,6 +123,9 @@ func writeResponse(writer http.ResponseWriter, response Response) {
 		}()
 		writer.Header().Add("Content-Type", "text/plain")
 		break
+	case FileResponse:
+		http.ServeFile(writer, request, response.Body.(string))
+		break
 	}
 	if err != nil {
 		writer.WriteHeader(500)
@@ -132,25 +138,47 @@ func writeResponse(writer http.ResponseWriter, response Response) {
 	}
 }
 
-func (r *Router) Handle(path string, endpoints endpointMap) {
-	http.HandleFunc(path, func(writer http.ResponseWriter, request *http.Request) {
+func (r *Router) Handle() {
+	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
 		write := func(response Response) {
-			writeResponse(writer, response)
+			writeResponse(writer, request, response)
 		}
 
-		handler, ok := endpoints[request.Method]
-		if ok {
+		store := make(map[string]interface{})
+
+		handler, err := r.getFunc(request.Method, request.URL.Path, store)
+		if err != nil {
+			switch err.Error() {
+			case "method not supported":
+				writeResponse(writer, request, Response{
+					Body:   "Method not supported",
+					Type:   PlainTextResponse,
+					Status: 400,
+				})
+				break
+			case "not found":
+				writeResponse(writer, request, Response{
+					Body:   "Not Found",
+					Type:   PlainTextResponse,
+					Status: 404,
+				})
+				break
+			default:
+				writeResponse(writer, request, Response{
+					Body:   "Unexpected Error",
+					Type:   PlainTextResponse,
+					Status: 500,
+				})
+				break
+			}
+
+		} else {
 			context := Context{
 				writer:  writer,
 				Request: request,
-				Store:   make(map[string]interface{}),
+				Store:   store,
 			}
 			handler(&context, write)
-		} else {
-			writeResponse(writer, Response{
-				Body: "Method not supported.",
-				Type: PlainTextResponse,
-			})
 		}
 	})
 }

@@ -2,6 +2,7 @@ package routing
 
 import (
 	"net/http"
+	"regexp"
 )
 
 // Middleware is a function that runs prior to the main function defined for an endpoint.
@@ -28,9 +29,13 @@ func (_ *BaseApi) NoMiddleware() ApiOptions {
 }
 
 type Router struct {
-	routes pathMap
-	config Config
+	endpoints endpoints
+	routes    pathMap
+	config    Config
 }
+
+type MethodNotSupportedError error
+type NotFoundError error
 
 type Context struct {
 	Request *http.Request
@@ -38,6 +43,15 @@ type Context struct {
 	Store   map[string]interface{}
 }
 
-type pathMap = map[string]endpointMap
-type endpointMap = map[string]endpointFunc
-type endpointFunc = func(*Context, func(Response))
+type pathMap map[string]endpointMap
+type endpointMap map[string]endpointFunc
+type endpointFunc func(*Context, func(Response))
+
+type endpoints map[string]endpointGroup
+
+type endpointGroup struct {
+	endpoints endpoints
+	functions endpointMap
+	rawRegex  string
+	regex     *regexp.Regexp
+}
