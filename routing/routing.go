@@ -153,13 +153,17 @@ func (r *Router) Handle() {
 
 		store := make(map[string]interface{})
 
+		fmt.Println(request.Method, request.URL.Path, r.config.Head != nil)
+
 		if request.Method == http.MethodHead {
 			if r.config.Head != nil {
-				write(r.config.Head(&Context{
+				headResponse := r.config.Head(&Context{
 					Request: request,
 					writer:  writer,
 					Store:   store,
-				}))
+				})
+				fmt.Println(headResponse)
+				write(headResponse)
 				return
 			}
 		}
