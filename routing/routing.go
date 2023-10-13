@@ -22,6 +22,8 @@ type Response struct {
 	Body interface{}
 	// See JSONResponse, HTMLResponse, XMLResponse, FileResponse
 	Type ResponseType
+	// The headers to add to the response.
+	Headers map[string]string
 }
 
 // Config provides the required config options to the Setup function.
@@ -132,6 +134,9 @@ func writeResponse(writer http.ResponseWriter, request *http.Request, response R
 	if err != nil {
 		writer.WriteHeader(500)
 		panic(err)
+	}
+	for key, value := range response.Headers {
+		writer.Header().Add(key, value)
 	}
 	writer.WriteHeader(response.Status)
 	_, err = writer.Write(body)
