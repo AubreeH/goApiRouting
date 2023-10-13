@@ -32,6 +32,7 @@ type Router struct {
 	endpoints endpoints
 	routes    pathMap
 	config    Config
+	
 }
 
 type MethodNotSupportedError error

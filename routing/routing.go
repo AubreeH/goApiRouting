@@ -30,6 +30,8 @@ type Config struct {
 	Port int
 	// Override for Response.Status
 	DefaultStatusCode int
+	// HEAD Request Handler
+	Head func(*Context) Response
 }
 
 func Setup(conf ...Config) *Router {
@@ -146,6 +148,17 @@ func (r *Router) Handle() {
 
 		store := make(map[string]interface{})
 
+		if request.Method == http.MethodHead {
+			if r.config.Head != nil {
+				write(r.config.Head(&Context{
+					Request: request,
+					writer:  writer,
+					Store:   store,
+				}))
+				return
+			}
+		}
+
 		handler, err := r.getFunc(request.Method, request.URL.Path, store)
 		if err != nil {
 			switch err.Error() {
@@ -155,21 +168,18 @@ func (r *Router) Handle() {
 					Type:   PlainTextResponse,
 					Status: 400,
 				})
-				break
 			case "not found":
 				writeResponse(writer, request, Response{
 					Body:   "Not Found",
 					Type:   PlainTextResponse,
 					Status: 404,
 				})
-				break
 			default:
 				writeResponse(writer, request, Response{
 					Body:   "Unexpected Error",
 					Type:   PlainTextResponse,
 					Status: 500,
 				})
-				break
 			}
 
 		} else {
@@ -222,6 +232,10 @@ func (api *BaseApi) Patch(route string, handler func(c *Context) Response) {
 // Delete adds a new GET endpoint with the provided route and handler.
 func (api *BaseApi) Delete(route string, handler func(c *Context) Response) {
 	api.Handle(http.MethodDelete, route, handler)
+}
+
+func (api *BaseApi) Head(route string, handler func(c *Context) Response) {
+	api.Handle(http.MethodHead, route, handler)
 }
 
 // Group defines a new route group with the provided route, and options.
