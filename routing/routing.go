@@ -50,17 +50,8 @@ func Setup(conf ...Config) *Router {
 func parseConfig(conf []Config) Config {
 	config := defaultConfig
 
-	providedConfig := Config{}
 	if len(conf) > 0 {
-		providedConfig = conf[0]
-	}
-
-	if providedConfig.Port != 0 {
-		config.Port = providedConfig.Port
-	}
-
-	if providedConfig.DefaultStatusCode != 0 {
-		config.DefaultStatusCode = providedConfig.DefaultStatusCode
+		config = conf[0]
 	}
 
 	return config
@@ -153,8 +144,6 @@ func (r *Router) Handle() {
 
 		store := make(map[string]interface{})
 
-		fmt.Println(request.Method, request.URL.Path, r.config.Head != nil)
-
 		if request.Method == http.MethodHead {
 			if r.config.Head != nil {
 				headResponse := r.config.Head(&Context{
@@ -162,7 +151,6 @@ func (r *Router) Handle() {
 					writer:  writer,
 					Store:   store,
 				})
-				fmt.Println(headResponse)
 				write(headResponse)
 				return
 			}
