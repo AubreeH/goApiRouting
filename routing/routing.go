@@ -32,8 +32,8 @@ type Config struct {
 	Port int
 	// Override for Response.Status
 	DefaultStatusCode int
-	// HEAD Request Handler
-	Head func(*Context) Response
+	// OPTION Request Handler
+	Option func(*Context) Response
 }
 
 func Setup(conf ...Config) *Router {
@@ -144,11 +144,11 @@ func (r *Router) Handle() {
 
 		store := make(map[string]interface{})
 
-		fmt.Println(request.Method, request.URL.Path, r.config.Head != nil)
+		fmt.Println(request.Method, request.URL.Path, r.config.Option != nil)
 
-		if request.Method == http.MethodHead {
-			if r.config.Head != nil {
-				headResponse := r.config.Head(&Context{
+		if request.Method == http.MethodOptions {
+			if r.config.Option != nil {
+				headResponse := r.config.Option(&Context{
 					Request: request,
 					writer:  writer,
 					Store:   store,
