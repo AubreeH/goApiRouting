@@ -24,7 +24,11 @@ type BaseApi struct {
 }
 
 // NoMiddleware returns an empty ApiOptions struct.
-func (_ *BaseApi) NoMiddleware() ApiOptions {
+func (*BaseApi) NoMiddleware() ApiOptions {
+	return ApiOptions{}
+}
+
+func NoMiddleware() ApiOptions {
 	return ApiOptions{}
 }
 
@@ -32,7 +36,6 @@ type Router struct {
 	endpoints endpoints
 	routes    pathMap
 	config    Config
-	
 }
 
 type MethodNotSupportedError error
@@ -55,4 +58,25 @@ type endpointGroup struct {
 	functions endpointMap
 	rawRegex  string
 	regex     *regexp.Regexp
+}
+
+type Response struct {
+	// The status code for the response. Defaults to "500 Internal Server Error" unless specified in Setup Config
+	Status int
+	// The response body.
+	Body interface{}
+	// See [JSONResponse], [HTMLResponse], [XMLResponse], [FileResponse]
+	Type ResponseType
+	// The headers to add to the response.
+	Headers map[string]string
+}
+
+// Config provides the required config options to the Setup function.
+type Config struct {
+	// The port to listen on. If not provided, will default to :80
+	Port int
+	// Override for Response.Status
+	DefaultStatusCode int
+	// OPTION Request Handler
+	Option func(*Context) Response
 }

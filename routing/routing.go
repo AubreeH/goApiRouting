@@ -15,27 +15,9 @@ var (
 	}
 )
 
-type Response struct {
-	// The status code for the response. Defaults to "500 Internal Server Error" unless specified in Setup Config
-	Status int
-	// The response body.
-	Body interface{}
-	// See JSONResponse, HTMLResponse, XMLResponse, FileResponse
-	Type ResponseType
-	// The headers to add to the response.
-	Headers map[string]string
-}
-
-// Config provides the required config options to the Setup function.
-type Config struct {
-	// The port to listen on. If not provided, will default to :80
-	Port int
-	// Override for Response.Status
-	DefaultStatusCode int
-	// OPTION Request Handler
-	Option func(*Context) Response
-}
-
+// Setup creates a new router instance with the provided config.
+// Only the first config provided will be used.
+// If no config is provided, the default config will be used.
 func Setup(conf ...Config) *Router {
 	config := parseConfig(conf)
 
@@ -45,6 +27,14 @@ func Setup(conf ...Config) *Router {
 	}
 
 	return router
+}
+
+// NewRouter creates a new router instance with the provided config.
+// Only the first config provided will be used.
+// If no config is provided, the default config will be used.
+// Alias for Setup.
+func NewRouter(conf ...Config) *Router {
+	return Setup(conf...)
 }
 
 func parseConfig(conf []Config) Config {
@@ -58,7 +48,6 @@ func parseConfig(conf []Config) Config {
 }
 
 // InitialiseRoutes initialises all routes defined within the provided functions.
-// Requires a *gin.Engine to be passed. Refer to gin documentation for basic setup.
 func (r *Router) InitialiseRoutes(apiFuncs ...func(api BaseApi)) {
 	api := BaseApi{
 		router:  r,
