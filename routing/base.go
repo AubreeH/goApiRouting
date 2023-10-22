@@ -7,8 +7,8 @@ import (
 
 var (
 	defaultConfig = Config{
-		Port:              80,
-		DefaultStatusCode: 500,
+		Port:             80,
+		MaxContentLength: 1000000,
 	}
 )
 

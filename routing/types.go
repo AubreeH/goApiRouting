@@ -98,10 +98,14 @@ type Response struct {
 type Config struct {
 	// The port to listen on. If not provided, will default to :80
 	Port int
-	// Override for Response.Status
-	DefaultStatusCode int
-	// OPTION Request Handler
-	Option func(*Context) Response
-	// BaseResponseHeaders are the headers to apply to every response. These values can be overwriten in the Response struct.
+	// BaseResponseHeaders are the headers to apply to every response.
+	//
+	// These values can be overwriten in [Response.Headers]
+	//
+	// [Response.Headers]: https://pkg.go.dev/github.com/AubreeH/goApiRouting/routing#Response.Headers
 	BaseResponseHeaders map[string]string
+	// MaxContentLength is the maximum size of the request body in bytes. Set to 0 to disable.
+	//
+	// Disabled by default
+	MaxContentLength uint64
 }
