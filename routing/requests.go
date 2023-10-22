@@ -202,7 +202,11 @@ func handleRedirectResponse(request *http.Request, writer http.ResponseWriter, r
 	if str, ok := response.Body.(string); !ok {
 		return fmt.Errorf("redirect body is not a string")
 	} else {
-		http.Redirect(writer, request, str, 301)
+		status := response.Status
+		if status == 0 {
+			status = StatusMovedPermanently
+		}
+		http.Redirect(writer, request, str, status)
 	}
 	return nil
 }
