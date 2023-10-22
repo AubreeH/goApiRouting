@@ -2,7 +2,9 @@ package routing
 
 import (
 	"net/http"
+	"net/url"
 	"regexp"
+	"sync"
 )
 
 // Middleware is a function that runs prior to the main function defined for an endpoint.
@@ -33,34 +35,52 @@ func NoMiddleware() ApiOptions {
 }
 
 type Router struct {
-	endpoints endpoints
+	endpoints *endpointGroup
 	routes    pathMap
 	config    Config
+	mux       *http.ServeMux
+	rwMutex   sync.RWMutex
 }
 
 type MethodNotSupportedError error
 type NotFoundError error
+type InternalServerError error
 
 type Context struct {
+	// The request object.
 	Request *http.Request
-	writer  http.ResponseWriter
-	Store   map[string]interface{}
+	// The response writer object.
+	// Using this may lead to unexpected behaviour.
+	Writer http.ResponseWriter
+	// The store is a map that can be used to store data between middlewares and functions.
+	Store *Store
+}
+
+type Store struct {
+	pathParameters map[string]string
+	query          url.Values
+	body           []byte
+	bodyMap        map[string]interface{}
+	store          map[string]interface{}
+	mux            sync.RWMutex
 }
 
 type pathMap map[string]endpointMap
 type endpointMap map[string]endpointFunc
 type endpointFunc struct {
 	function func(*Context, func(Response)) `json:"-"`
-	path     string
+	Path     string
 }
 
-type endpoints map[string]endpointGroup
+type endpoints map[string]*endpointGroup
 
 type endpointGroup struct {
-	endpoints endpoints
-	functions endpointMap
-	rawRegex  string
-	regex     *regexp.Regexp
+	GroupName        string
+	Endpoints        endpoints
+	Functions        endpointMap
+	RawRegex         string
+	CanMatchRawRegex bool
+	Regex            *regexp.Regexp
 }
 
 type Response struct {
@@ -82,4 +102,6 @@ type Config struct {
 	DefaultStatusCode int
 	// OPTION Request Handler
 	Option func(*Context) Response
+	// BaseResponseHeaders are the headers to apply to every response. These values can be overwriten in the Response struct.
+	BaseResponseHeaders map[string]string
 }
