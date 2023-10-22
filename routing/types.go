@@ -49,7 +49,10 @@ type Context struct {
 
 type pathMap map[string]endpointMap
 type endpointMap map[string]endpointFunc
-type endpointFunc func(*Context, func(Response))
+type endpointFunc struct {
+	function func(*Context, func(Response)) `json:"-"`
+	path     string
+}
 
 type endpoints map[string]endpointGroup
 

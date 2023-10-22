@@ -190,11 +190,13 @@ func (api *BaseApi) Handle(method string, route string, handler func(*Context) R
 			respond(handler(c))
 		}
 	}
-	if _, ok := api.router.routes[path]; ok {
-		api.router.routes[path][method] = handlerWithMiddleware
-	} else {
+	if api.router.routes[path] == nil {
 		api.router.routes[path] = make(endpointMap)
-		api.router.routes[path][method] = handlerWithMiddleware
+	}
+
+	api.router.routes[path][method] = endpointFunc{
+		function: handlerWithMiddleware,
+		path:     path,
 	}
 
 }

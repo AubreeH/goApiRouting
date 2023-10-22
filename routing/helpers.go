@@ -134,8 +134,8 @@ func (r *Router) getFunc(method, path string, store map[string]interface{}) (fun
 		return nil, err
 	}
 
-	if function, ok := group.functions[method]; ok && function != nil {
-		return function, nil
+	if function, ok := group.functions[method]; ok && function.function != nil {
+		return function.function, nil
 	} else {
 		return nil, errors.New("not found").(NotFoundError)
 	}
