@@ -119,7 +119,6 @@ type File struct {
 	FileName string
 	FilePath string
 
-	formname       string
 	saved          bool
 	stored         bool
 	formFileHeader *multipart.FileHeader

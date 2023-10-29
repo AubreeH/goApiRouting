@@ -139,7 +139,7 @@ func (s *Store) parseMultipartForm() error {
 				return err
 			}
 			s.files[formName] = &File{
-				formname:       formName,
+				Name:           formName,
 				formFileHeader: header,
 			}
 		} else {
