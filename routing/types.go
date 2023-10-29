@@ -1,6 +1,7 @@
 package routing
 
 import (
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -52,7 +53,7 @@ type Context struct {
 	// The response writer object.
 	// Using this may lead to unexpected behaviour.
 	Writer http.ResponseWriter
-	// The store is a map that can be used to store data between middlewares and functions.
+	// The store object.
 	Store *Store
 }
 
@@ -60,9 +61,12 @@ type Store struct {
 	pathParameters map[string]string
 	query          url.Values
 	body           []byte
+	files          map[string]*File
 	bodyMap        map[string]interface{}
 	store          map[string]interface{}
 	mux            sync.RWMutex
+	contentType    string
+	context        *Context
 }
 
 type pathMap map[string]endpointMap
@@ -107,5 +111,17 @@ type Config struct {
 	// MaxContentLength is the maximum size of the request body in bytes. Set to 0 to disable.
 	//
 	// Disabled by default
-	MaxContentLength uint64
+	MaxContentLength int64
+}
+
+type File struct {
+	Name     string
+	FileName string
+	FilePath string
+
+	formname       string
+	saved          bool
+	stored         bool
+	formFileHeader *multipart.FileHeader
+	mux            sync.RWMutex
 }

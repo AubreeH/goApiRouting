@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 )
 
 var (
@@ -45,6 +46,11 @@ func (r *Router) handleRequest(writer http.ResponseWriter, request *http.Request
 		return
 	}
 
+	var context *Context
+	defer cleanup(context)
+
+	request.Body = http.MaxBytesReader(writer, request.Body, r.config.MaxContentLength)
+
 	handler, pathParameters, err := r.getFunc(request.Method, request.URL.Path)
 	if err != nil {
 		switch err.Error() {
@@ -58,21 +64,33 @@ func (r *Router) handleRequest(writer http.ResponseWriter, request *http.Request
 	} else if requestBody, err := getRequestBody(request); err != nil {
 		r.writeResponse(writer, request, invalidRequestBodyResponse)
 	} else {
-		handler(
-			&Context{
-				Writer:  writer,
-				Request: request,
-				Store: &Store{
-					pathParameters: pathParameters,
-					query:          request.URL.Query(),
-					body:           requestBody,
-					store:          make(map[string]interface{}),
-				},
-			},
-			func(response Response) {
-				r.writeResponse(writer, request, response)
-			},
-		)
+		context = &Context{
+			Writer:  writer,
+			Request: request,
+		}
+
+		context.Store = &Store{
+			pathParameters: pathParameters,
+			query:          request.URL.Query(),
+			body:           requestBody,
+			store:          make(map[string]interface{}),
+			contentType:    request.Header.Get("Content-Type"),
+			context:        context,
+		}
+
+		handler(context, func(response Response) {
+			r.writeResponse(writer, request, response)
+		})
+	}
+}
+
+func cleanup(c *Context) {
+	if c != nil && c.Store != nil && c.Store.files != nil {
+		for _, file := range c.Store.files {
+			if file.saved && !file.stored {
+				os.Remove(file.FilePath)
+			}
+		}
 	}
 }
 

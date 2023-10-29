@@ -2,7 +2,10 @@ package routing
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"errors"
+	"io"
+	"strings"
 )
 
 // Retrieves value from the store. The order of precedence is:
@@ -65,14 +68,89 @@ func (s *Store) GetQueryParameter(key string) (value []string, ok bool) {
 // Returns the request body as a map.
 func (s *Store) GetBody() (value map[string]interface{}, err error) {
 	s.mux.RLock()
-	if s.body == nil {
-		err = errors.New("request body is nil")
-	} else if s.bodyMap == nil {
-		err = json.Unmarshal(s.body, &s.bodyMap)
+	if s.bodyMap == nil {
+		err = s.parseBody()
 	}
 	value = s.bodyMap
 	s.mux.RUnlock()
 	return
+}
+
+func (s *Store) parseBody() error {
+	if s.bodyMap != nil {
+		return nil
+	} else if s.body == nil {
+		return errors.New("request body is nil")
+	}
+
+	switch s.contentType {
+	case "application/json":
+		return json.Unmarshal(s.body, &s.bodyMap)
+	case "application/xml":
+		return xml.Unmarshal(s.body, &s.bodyMap)
+	case "application/x-www-form-urlencoded":
+		return s.parseForm()
+	}
+
+	if strings.HasPrefix(s.contentType, "multipart/form-data") {
+		return s.parseMultipartForm()
+	}
+
+	return errors.New("unsupported content type")
+}
+
+func (s *Store) parseForm() error {
+	req := s.context.Request
+	if err := req.ParseForm(); err != nil {
+		return err
+	}
+
+	err := req.ParseForm()
+	if err != nil {
+		return err
+	}
+
+	for key, value := range req.Form {
+		s.bodyMap[key] = value
+	}
+
+	return nil
+}
+
+func (s *Store) parseMultipartForm() error {
+	req := s.context.Request
+	reader, err := req.MultipartReader()
+	if err != nil {
+		return err
+	}
+
+	for {
+		part, err := reader.NextPart()
+		if err == io.EOF {
+			return nil
+		} else if err != nil {
+			return err
+		}
+
+		formName := part.FormName()
+		if part.FileName() != "" {
+			_, header, err := req.FormFile(formName)
+			if err != nil {
+				return err
+			}
+			s.files[formName] = &File{
+				formname:       formName,
+				formFileHeader: header,
+			}
+		} else {
+			var b []byte
+			_, err := part.Read(b)
+			if err != nil {
+				return err
+			}
+			s.bodyMap[formName] = string(b)
+		}
+	}
 }
 
 // Returns the request body marshalled into the given type.
