@@ -164,3 +164,17 @@ func GetBody[TBody any](s *Store) (value TBody, err error) {
 	s.mux.RUnlock()
 	return
 }
+
+func (s *Store) GetFile(key string) (value *File, ok bool) {
+	s.mux.RLock()
+	value, ok = s.files[key]
+	s.mux.RUnlock()
+	return
+}
+
+func (s *Store) GetFiles() map[string]*File {
+	s.mux.RLock()
+	files := s.files
+	s.mux.RUnlock()
+	return files
+}
