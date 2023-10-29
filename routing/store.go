@@ -39,6 +39,13 @@ func (s *Store) Get(key string) (value interface{}, err error) {
 	return
 }
 
+// Sets value in the store.
+func (c *Store) Set(key string, value interface{}) {
+	c.mux.Lock()
+	c.store[key] = value
+	c.mux.Unlock()
+}
+
 // Retrieves path parameter with the given key.
 func (s *Store) GetPathParameter(key string) (value string, ok bool) {
 	s.mux.RLock()
