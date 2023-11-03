@@ -16,13 +16,13 @@ import (
 // Returns an error if the key is not found.
 func (s *Store) Get(key string) (value interface{}, err error) {
 	s.mux.RLock()
-	if storeValue, ok := s.store[key]; !ok {
+	if storeValue, ok := s.store[key]; ok {
 		value = storeValue
-	} else if pathValue, ok := s.pathParameters[key]; !ok {
+	} else if pathValue, ok := s.pathParameters[key]; ok {
 		value = pathValue
-	} else if queryValue, ok := s.query[key]; !ok {
+	} else if queryValue, ok := s.query[key]; ok {
 		value = queryValue
-	} else if bodyValue, ok := s.bodyMap[key]; !ok {
+	} else if bodyValue, ok := s.bodyMap[key]; ok {
 		value = bodyValue
 	} else if s.body != nil {
 		var body map[string]interface{}
