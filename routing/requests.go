@@ -175,6 +175,13 @@ func writeJSONResponse(request *http.Request, writer http.ResponseWriter, respon
 }
 
 func writeHTMLResponse(request *http.Request, writer http.ResponseWriter, response Response) error {
+	if response.Template != nil {
+		if err := response.Template.Execute(writer, response.Body); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	var body string
 	if response.Body == nil {
 		body = ""
@@ -201,6 +208,13 @@ func writeXMLResponse(request *http.Request, writer http.ResponseWriter, respons
 }
 
 func writePlainTextResponse(request *http.Request, writer http.ResponseWriter, response Response) error {
+	if response.Template != nil {
+		if err := response.Template.Execute(writer, response.Body); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	var body string
 	if response.Body == nil {
 		body = ""

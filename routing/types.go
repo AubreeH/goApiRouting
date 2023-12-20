@@ -1,6 +1,7 @@
 package routing
 
 import (
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -87,12 +88,18 @@ type endpointGroup struct {
 	Regex            *regexp.Regexp
 }
 
+type Template interface {
+	Execute(w io.Writer, data any) error
+}
+
 type Response struct {
 	// The status code for the response. Defaults to "500 Internal Server Error" unless specified in Setup Config
 	Status int
+	// The template to use for the response. Only used if [Type] is [HTMLResponse] or [PlainTextResponse]
+	Template Template
 	// The response body.
 	Body interface{}
-	// See [JSONResponse], [HTMLResponse], [XMLResponse], [FileResponse]
+	// See [JSONResponse], [HTMLResponse], [XMLResponse], [FileResponse], [PlainTextResponse], [RedirectResponse], [NoResponse], [CustomResponse]
 	Type ResponseType
 	// The headers to add to the response.
 	Headers map[string]string
