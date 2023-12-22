@@ -8,6 +8,7 @@ import (
 
 var (
 	groupSplitRegex      = regexp.MustCompile(`/+([^/]+)`)
+	groupPartRegex       = regexp.MustCompile(`[/]+`)
 	groupConditionsRegex = regexp.MustCompile(`(?:\${(?P<name>[^=]*?)(?:="(?P<condition>.*?)")?})`)
 )
 

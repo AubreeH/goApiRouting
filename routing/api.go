@@ -67,7 +67,7 @@ func (api *BaseApi) Any(route string, handler func(c *Context) Response) {
 // Use the function within the define sub routes for the Group.
 func (api *BaseApi) Group(route string, options ApiOptions, group func(api BaseApi)) {
 	if route == "*" {
-		panic("group cannot have wildcard route")
+		panic("group cannot have wildcard group route")
 	}
 
 	if route != "" {

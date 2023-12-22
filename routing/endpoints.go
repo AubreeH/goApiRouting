@@ -7,13 +7,22 @@ func (r *Router) setupEndpointGroups() {
 		GroupName: "",
 	}
 	for route, m := range r.routes {
+		// fmt.Printf("route: '%s'\n", route)
+		// fmt.Printf("endpoints before: %+v\n", r.endpoints)
 		r.endpoints.addRoute(route, m)
+		// fmt.Printf("endpoints after: %+v\n", r.endpoints)
+
 	}
 }
 
 // Adds a route to the endpoint group map.
 func (eg *endpointGroup) addRoute(route string, m endpointMap) {
 	groups := groupSplitRegex.FindAllStringSubmatch(route, -1)
+
+	if len(groups) == 0 {
+		eg.addFunctions(m)
+		return
+	}
 
 	currentEndpointGroup := eg
 	for i, group := range groups {
