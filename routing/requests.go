@@ -236,7 +236,7 @@ func handleRedirectResponse(request *http.Request, writer http.ResponseWriter, r
 	} else {
 		status := response.Status
 		if status == 0 {
-			status = StatusMovedPermanently
+			status = StatusFound
 		}
 		http.Redirect(writer, request, str, status)
 	}
