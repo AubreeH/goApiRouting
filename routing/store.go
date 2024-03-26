@@ -28,6 +28,7 @@ func (s *Store) Get(key string) (value interface{}, err error) {
 		var body map[string]interface{}
 		body, err = s.GetBody()
 		if err != nil {
+			s.mux.RUnlock()
 			return nil, err
 		}
 		value, ok = body[key]
