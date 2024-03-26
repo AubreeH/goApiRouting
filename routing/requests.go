@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 )
@@ -99,15 +100,7 @@ func getRequestBody(request *http.Request) ([]byte, error) {
 		return nil, nil
 	}
 
-	var body []byte
-	_, err := request.Body.Read(body)
-	if err != nil && err.Error() == "EOF" {
-		return nil, nil
-	} else if err != nil {
-		return nil, err
-	}
-
-	return body, nil
+	return io.ReadAll(request.Body)
 }
 
 func (r *Router) writeResponse(writer http.ResponseWriter, request *http.Request, response Response) {

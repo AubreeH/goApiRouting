@@ -24,13 +24,6 @@ func (r *Router) checkContentLength(request *http.Request, writer http.ResponseW
 			Type:   PlainTextResponse,
 			Status: StatusLengthRequired,
 		})
-	} else if request.ContentLength == 0 && request.Body != nil {
-		r.writeResponse(writer, request, Response{
-			Body:   "content length not specified",
-			Type:   PlainTextResponse,
-			Status: StatusLengthRequired,
-		})
-		return errors.New("content length not specified")
 	} else if request.ContentLength > int64(r.config.MaxContentLength) {
 		r.writeResponse(writer, request, Response{
 			Body:   "content length too large",

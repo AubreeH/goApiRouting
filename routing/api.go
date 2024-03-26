@@ -74,13 +74,13 @@ func (api *BaseApi) Group(route string, options ApiOptions, group func(api BaseA
 		group(BaseApi{
 			router:  api.router,
 			route:   api.route + "/" + route,
-			options: options.mergeOptions(api.options),
+			options: api.options.mergeOptions(options),
 		})
 	} else {
 		group(BaseApi{
 			router:  api.router,
 			route:   api.route,
-			options: options.mergeOptions(api.options),
+			options: api.options.mergeOptions(options),
 		})
 	}
 }

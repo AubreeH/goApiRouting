@@ -80,7 +80,6 @@ func (e *endpointGroup) getFunc(method string) (func(*Context, func(Response)), 
 		return nil, errors.New("internal server error").(InternalServerError)
 	} else if ok {
 		return function.function, nil
-	} else {
 	}
 
 	if function, ok := e.Functions["*"]; ok && function.function == nil {
